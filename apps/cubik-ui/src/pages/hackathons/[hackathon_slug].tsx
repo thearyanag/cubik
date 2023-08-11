@@ -3,11 +3,17 @@ import { Skeleton } from '@chakra-ui/react';
 import { GetServerSideProps } from 'next';
 import Image from 'next/image';
 import HackathonDetails from '~/components/pages/hackathons/hackathonDetails/HackathonDetails';
+import HackathonStatus from '~/components/pages/hackathons/HackathonStatus';
 import SEO from '~/components/SEO';
+import {
+  HackathonHost,
+  HackathonSchedule,
+  HackathonSocial,
+  HackathonTracks,
+} from '~/types/hackathon';
 import { trpc } from '~/utils/trpc';
 
 const HackathonDetail = (props: { slug: string; share: boolean }) => {
-  console.log(props);
   const { data, isLoading } = trpc.hackathon.get.useQuery(
     {
       slug: props.slug,
@@ -16,27 +22,25 @@ const HackathonDetail = (props: { slug: string; share: boolean }) => {
       refetchOnMount: false,
       refetchOnReconnect: false,
       refetchOnWindowFocus: false,
-    }
+    },
   );
+
 
   return (
     <>
       <SEO
-        title={`Speedrun`}
-        description={`First ever Solana Virtual Game Jam hosted by Lamport DAO and Solana Graming Community`}
+        title={data?.name || 'Hackathon'}
+        description={data?.short_description || 'Quadratically Voted Hackathon'}
         image={
           props.share
             ? 'https://res.cloudinary.com/demonicirfan/image/upload/v1688145530/OG-Grant_11_mchdyq.png'
-            : 'https://res.cloudinary.com/demonicirfan/image/upload/v1688128772/OG-Grant_10_jlqdjx.png'
+            : data?.background ||
+              'https://res.cloudinary.com/demonicirfan/image/upload/v1688128772/OG-Grant_10_jlqdjx.png'
         }
       />
       <Container p={'0'} maxW={'full'}>
         <VStack>
-          <Skeleton
-            isLoaded={!isLoading}
-            opacity={isLoading ? '0.1' : '1'}
-            fadeDuration={2}
-          >
+          <Skeleton isLoaded={!isLoading} opacity={isLoading ? '0.1' : '1'} fadeDuration={2}>
             <Center
               alignItems={'end'}
               w="100vw"
@@ -50,8 +54,7 @@ const HackathonDetail = (props: { slug: string; share: boolean }) => {
                 left: 0,
                 right: 0,
                 height: { base: '16rem', md: '20rem', lg: '24rem' },
-                background:
-                  'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
+                background: 'linear-gradient(0deg, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%)',
                 zIndex: 1,
               }}
             >
@@ -73,11 +76,11 @@ const HackathonDetail = (props: { slug: string; share: boolean }) => {
             short_description={data?.short_description}
             background={data?.background}
             description={data?.description}
-            host={data?.host}
+            host={data?.host as unknown as HackathonHost[]}
             prize_pool={data?.prize_pool}
-            prize={data?.prize}
-            timeline={data?.timeline}
-            social={data?.social}
+            timeline={data?.timeline as unknown as HackathonSchedule}
+            social={data?.social as unknown as HackathonSocial[]}
+            tracks={data?.track as unknown as HackathonTracks[]}
           />
         </VStack>
       </Container>
@@ -85,7 +88,7 @@ const HackathonDetail = (props: { slug: string; share: boolean }) => {
   );
 };
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
+export const getServerSideProps: GetServerSideProps = async context => {
   const hackathon_slug = context.params?.hackathon_slug;
   const hasShare = context.query.share;
 

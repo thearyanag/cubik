@@ -666,3 +666,151 @@ export const proofRemove = async (wallet: NodeWallet, proofType: ProofType) => {
 
   return ix;
 };
+
+export const projectJoinHackathon = async (
+  wallet: NodeWallet,
+  projectCount: number,
+  counter: number,
+  hackathonAdmin: string,
+) => {
+  const program = anchorProgram(wallet);
+  let [project_account] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      anchor.utils.bytes.utf8.encode('project'),
+      wallet.publicKey.toBuffer(),
+      Buffer.from(projectCount.toString()),
+    ],
+    program.programId,
+  );
+  const [hackathon_account] = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from('hackathon'),
+      new anchor.web3.PublicKey(hackathonAdmin).toBuffer(),
+      new anchor.BN(counter).toArrayLike(Buffer, 'le', 2),
+    ],
+    new anchor.web3.PublicKey('DQDrRfiaqSzbSJCL9BMzPd6TfgLmDHxCEQDCrjoK9jCF'),
+  );
+  const [hackathonJoinAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from('hackathonjoin'), hackathon_account.toBuffer(), project_account.toBuffer()],
+    program.programId,
+  );
+  const ix = await program.methods
+    .projectJoinHackathon(hackathon_account, project_account)
+    .accounts({
+      hackathonJoinAccount: hackathonJoinAccount,
+    })
+    .instruction();
+
+  return ix;
+};
+
+export const createContributionV2 = async (
+  wallet: NodeWallet,
+  amount: number,
+  split: number,
+  owner: string,
+  roundId: string,
+  projectCount: number,
+  token: string,
+) => {
+  try {
+    const createKey = anchor.web3.Keypair.generate();
+    const program = anchorProgram(wallet);
+
+    const tokenMint = new anchor.web3.PublicKey(token);
+    const [adminAccount] = anchor.web3.PublicKey.findProgramAddressSync(
+      [Buffer.from('admin')],
+      program.programId,
+    );
+
+    let [project_account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode('project'),
+        new anchor.web3.PublicKey(owner).toBuffer(),
+        Buffer.from(projectCount.toString()),
+      ],
+      program.programId,
+    );
+    let [contributionV2Account] = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        anchor.utils.bytes.utf8.encode('contribution'),
+        wallet.publicKey.toBuffer(),
+        createKey.publicKey.toBuffer(),
+      ],
+      program.programId,
+    );
+
+    // ATAs
+    const ata_sender = await spl.getAssociatedTokenAddress(
+      tokenMint,
+      wallet.publicKey,
+      false,
+      spl.TOKEN_PROGRAM_ID,
+      spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+    const projectInfo = await program.account.project.fetch(project_account);
+    //@ts-ignore
+    const adminInfo = await program.account.admin.fetch(adminAccount);
+    const ata_admin = await spl.getAssociatedTokenAddress(
+      tokenMint,
+      adminInfo.authority,
+      false,
+      spl.TOKEN_PROGRAM_ID,
+      spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+    const ata_reciver = await spl.getAssociatedTokenAddress(
+      tokenMint,
+      projectInfo.multiSig,
+      true,
+      spl.TOKEN_PROGRAM_ID,
+      spl.ASSOCIATED_TOKEN_PROGRAM_ID,
+    );
+    const info = await connection.getAccountInfo(ata_reciver);
+    const info2 = await connection.getAccountInfo(ata_admin);
+    let tokenAccountIx: anchor.web3.TransactionInstruction | null = null;
+    let tokenAccountIx2: anchor.web3.TransactionInstruction | null = null;
+    if (!info) {
+      tokenAccountIx = spl.createAssociatedTokenAccountInstruction(
+        wallet.publicKey,
+        ata_reciver,
+        projectInfo.multiSig,
+        tokenMint,
+      );
+    }
+    if (!info2) {
+      tokenAccountIx2 = spl.createAssociatedTokenAccountInstruction(
+        wallet.publicKey,
+        ata_admin,
+        adminInfo.authority,
+        tokenMint,
+      );
+    }
+    //
+    const ix = await program.methods
+      .createContributionV2(
+        new anchor.BN(amount),
+        new anchor.BN(split),
+        createKey.publicKey,
+        new anchor.web3.PublicKey(owner),
+        roundId,
+        JSON.stringify(projectCount),
+      )
+      .accounts({
+        adminAccount: adminAccount,
+        projectAccount: project_account,
+        contributionAccount: contributionV2Account,
+        tokenProgram: spl.TOKEN_PROGRAM_ID,
+        tokenMint: tokenMint,
+        tokenAtaAdmin: ata_admin,
+        tokenAtaSender: ata_sender,
+        tokenAtaReceiver: ata_reciver,
+        authority: wallet.publicKey,
+      })
+      .instruction();
+
+    return [ix, tokenAccountIx, tokenAccountIx2];
+  } catch (error) {
+    console.log(error);
+    return [null, null, null];
+  }
+};

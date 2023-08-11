@@ -13,3 +13,5 @@ export * from './verifiedProjects';
 export * from './projectVisitorsDetail';
 export * from './findManyRejected';
 export * from './findManyVerifiedWithContributions';
+export * from './getProjects';
+export * from './findOneHackthon';

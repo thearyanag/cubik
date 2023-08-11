@@ -1,7 +1,8 @@
-import { Box, HStack, Stack, VStack } from '@chakra-ui/react';
+import { Box, HStack, Stack, Tooltip, VStack } from '@chakra-ui/react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import FlipNumbers from 'react-flip-numbers';
+import { FiInfo } from 'react-icons/fi';
 import RoundStatus from '~/components/common/dates/Status';
 
 interface CountdownTimerProps {
@@ -24,9 +25,7 @@ export const CountdownTimer: React.FC<CountdownTimerProps> = ({ date }) => {
     };
   };
 
-  const [timeRemaining, setTimeRemaining] = useState<number>(
-    getTimeRemaining(date).total
-  );
+  const [timeRemaining, setTimeRemaining] = useState<number>(getTimeRemaining(date).total);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -83,9 +82,7 @@ export const CountdownTimerBig: React.FC<CountdownTimerProps> = ({ date }) => {
     };
   };
 
-  const [timeRemaining, setTimeRemaining] = useState<number>(
-    getTimeRemaining(date).total
-  );
+  const [timeRemaining, setTimeRemaining] = useState<number>(getTimeRemaining(date).total);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -179,26 +176,20 @@ export const CountdownTimerBig: React.FC<CountdownTimerProps> = ({ date }) => {
 const FundingRoundBanner = ({
   startDate,
   endDate,
-  roundId,
-  roundName,
-  roundDescription,
+  id,
+  name,
+  description,
   matchingPool,
 }: {
   startDate: Date;
   endDate: Date;
-  roundId: string;
-  roundName: string;
-  roundDescription: string;
+  id: string;
+  name: string;
+  description: string;
   matchingPool: number;
 }) => {
   return (
-    <Stack
-      as={Link}
-      href={`/grants/${roundId}`}
-      cursor={'pointer'}
-      w="full"
-      direction={{ base: 'column', md: 'row' }}
-    >
+    <Stack cursor={'pointer'} w="full" direction={{ base: 'column', md: 'row' }}>
       <Stack
         maxW={'full'}
         p={{ base: '16px', md: '32px' }}
@@ -251,7 +242,7 @@ const FundingRoundBanner = ({
       >
         <VStack w="full" align={'start'} spacing="48px">
           <VStack w="full" align={'start'} spacing="24px">
-            <RoundStatus startDate={startDate} endDate={endDate} />
+            <RoundStatus isHackathon={true} startDate={startDate} endDate={endDate} />
             <Stack
               direction={{ base: 'column', md: 'row' }}
               justify={'space-between'}
@@ -260,22 +251,18 @@ const FundingRoundBanner = ({
               w="full"
             >
               <VStack align={'start'} gap="8px">
-                <Box
-                  color="neutral.11"
-                  as="p"
-                  textStyle={{ base: 'title2', md: 'headline3' }}
-                >
-                  {roundName}
+                <Box color="neutral.11" as="p" textStyle={{ base: 'title2', md: 'headline3' }}>
+                  {name}
                 </Box>
                 <Box
                   maxW={{ base: '340px', md: '500px' }}
                   as="p"
                   color="neutral.8"
-                  h="2.5rem"
+                  h="2.8rem"
                   textStyle={{ base: 'body5', md: 'body3' }}
                   noOfLines={2}
                 >
-                  {roundDescription}
+                  {description}
                 </Box>
               </VStack>
               <HStack
@@ -294,9 +281,21 @@ const FundingRoundBanner = ({
                 >
                   Matching Pool :
                 </Box>
-                <Box as="p" textStyle={{ base: 'body5', md: 'title3' }}>
-                  ${matchingPool}
-                </Box>
+                <HStack>
+                  <Box as="p" textStyle={{ base: 'body5', md: 'title3' }}>
+                    ${matchingPool}
+                  </Box>
+                  <Tooltip
+                    zIndex={1000}
+                    background={'black'}
+                    p={2}
+                    label="The matching pool is in 1M $RAIN  + 1K $USDC. The USD value of $RAIN is subject to change"
+                  >
+                    <Box zIndex={1000} as="p">
+                      <FiInfo />
+                    </Box>
+                  </Tooltip>
+                </HStack>
               </HStack>
             </Stack>
           </VStack>

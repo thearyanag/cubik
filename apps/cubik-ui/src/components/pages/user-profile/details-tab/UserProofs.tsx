@@ -186,16 +186,8 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
   return (
     <VStack align="start" w="full">
       <HStack gap="8px">
-        <Skeleton
-          isLoaded={!isLoading}
-          opacity={isLoading ? '0.6' : 1}
-          fadeDuration={2}
-        >
-          <Box
-            as="p"
-            textStyle={{ base: 'title4', md: 'title3' }}
-            color="neutral.11"
-          >
+        <Skeleton isLoaded={!isLoading} opacity={isLoading ? '0.6' : 1} fadeDuration={2}>
+          <Box as="p" textStyle={{ base: 'title4', md: 'title3' }} color="neutral.11">
             Proofs
           </Box>
         </Skeleton>
@@ -230,11 +222,7 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
             transition={{ duration: 0.3 }}
           >
             <GoogleProof
-              minted={
-                proofs?.find((e) => e.name.toLocaleLowerCase() === 'google')
-                  ? true
-                  : false
-              }
+              minted={proofs?.find(e => e.name.toLocaleLowerCase() === 'google') ? true : false}
               isLoading={isLoading}
             />
           </MotionBox>
@@ -273,12 +261,8 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
             transition={{ duration: 0.3 }}
           >
             <SuperteamProof
-              claimed={
-                proofs?.find((e) => e.name === 'SUPERTEAM') ? true : false
-              }
-              isClaimAble={
-                SuperteamMembers.find((e) => e === wallet) ? true : false
-              }
+              claimed={proofs?.find(e => e.name === 'SUPERTEAM') ? true : false}
+              isClaimAble={SuperteamMembers.find(e => e === wallet) ? true : false}
             />
           </MotionBox>
         </Skeleton>
@@ -298,16 +282,13 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
             transition={{ duration: 0.3 }}
           >
             <GithubProof
-              minted={
-                proofs?.find((e) => e.name.toLocaleLowerCase() === 'github')
-                  ? true
-                  : false
-              }
+              minted={false}
+              // minted={proofs?.find(e => e.name.toLocaleLowerCase() === 'github') ? true : false}
               isLoading={isLoading}
             />
           </MotionBox>
         </Skeleton>
-        <Skeleton
+        {/* <Skeleton
           fadeDuration={2.6}
           isLoaded={!isLoading}
           opacity={isLoading ? 0.4 : 1}
@@ -323,14 +304,10 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
             transition={{ duration: 0.3 }}
           >
             <DripProof
-              claimed={
-                proofs?.find((e) => e.name.toLocaleLowerCase() === 'drips01')
-                  ? true
-                  : false
-              }
+              claimed={proofs?.find(e => e.name.toLocaleLowerCase() === 'drips01') ? true : false}
             />
           </MotionBox>
-        </Skeleton>
+        </Skeleton> */}
         <Skeleton
           fadeDuration={2.6}
           isLoaded={!isLoading}
@@ -349,11 +326,7 @@ const UserProofs = ({ isLoading, proofs, wallet }: Props) => {
             <CubikGrantee
               canMint={(checkProofs.data as boolean) ?? false}
               minted={
-                proofs?.find(
-                  (e) => e.name.toLocaleLowerCase() === 'cubikgrantee'
-                )
-                  ? true
-                  : false
+                proofs?.find(e => e.name.toLocaleLowerCase() === 'cubikgrantee') ? true : false
               }
               isLoading={isLoading}
             />

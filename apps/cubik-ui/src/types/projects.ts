@@ -1,6 +1,6 @@
 import { Prisma, ProjectJoinRoundStatus } from '@cubik/database';
 
-type ProjectCommon = {
+interface ProjectCommon {
   id: string;
   status: ProjectJoinRoundStatus;
   amountRaise: number | null;
@@ -12,7 +12,7 @@ type ProjectCommon = {
     roundName: string;
     startTime: Date;
   };
-};
+}
 
 type ProjectNonMobile = ProjectCommon & {
   project: {
@@ -62,5 +62,33 @@ export type searchProjectsType = Prisma.ProjectsModelGetPayload<{
         username: true;
       };
     };
+  };
+}>;
+
+export interface ProjectExplorerCard {
+  name: string;
+  logo: string;
+  industry: string;
+  startTime: Date;
+  endTime: Date;
+  projectId: string;
+  joinId?: string;
+  ownerUsername: string;
+  stats?: ProjectJoinRoundStatus;
+  amountRaised: number;
+  projectDescription: string;
+  colorScheme: string;
+}
+
+export type ProjectProfileCard = Prisma.ProjectsModelGetPayload<{
+  select: {
+    id: true;
+    industry: true;
+    name: true;
+    logo: true;
+    short_description: true;
+    isArchive: true;
+    status: true;
+    project_link: true;
   };
 }>;

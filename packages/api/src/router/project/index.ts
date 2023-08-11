@@ -15,12 +15,16 @@ import {
   findManyRejected,
   findManyVerifiedWithContributions,
   projectVisitorsDetail,
+  getProjects,
+  findOneHackthon,
 } from './public';
 import {
   createProject,
   joinRound,
   projectAdminDetails,
   projectCount,
+  projectIsValid,
+  projectsHackathonSubmit,
 } from './protected';
 export const projectRouter = createTRPCRouter({
   findAll: findAllProject,
@@ -33,7 +37,6 @@ export const projectRouter = createTRPCRouter({
   findManyVerifiedWithContributions: findManyVerifiedWithContributions,
   findOne: findOneProject,
   joinRound: joinRound,
-  projectAdminDetails: projectAdminDetails,
   projectVisitorsDetail: projectVisitorsDetail,
   count: projectCount,
   updateProjectStatus: updateProjectStatus,
@@ -42,4 +45,9 @@ export const projectRouter = createTRPCRouter({
   findSimilarProjects: findSimilar,
   findManyVerifiedUser: findManyVerifiedUser,
   searchProjects: searchProjects,
+  projectsHackathonSubmit: projectsHackathonSubmit,
+  projectIsValid: projectIsValid,
+  getProjects: getProjects,
+  projectAdminDetails: projectAdminDetails,
+  findOneHackthon: findOneHackthon,
 });

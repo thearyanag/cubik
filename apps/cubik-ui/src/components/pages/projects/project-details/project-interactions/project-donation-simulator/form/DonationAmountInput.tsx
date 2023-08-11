@@ -7,24 +7,32 @@ import { tokenGroup } from '~/interfaces/token';
 import useCurrentTokenPrice from '~/hooks/useCurrentTokenPrice';
 
 type AmountInputProps = {
-  donation: number;
-  setDonation: (value: number) => void;
-  register: UseFormRegister<DonationFormType>;
+  value: number;
+  setValue: (value: number) => void;
+  register: UseFormRegister<DonationFormType | any>;
   errors: FieldErrors<DonationFormType>;
   token: tokenGroup[];
-  control: Control<DonationFormType, any>;
+  seletedToken: string;
+  control: Control<DonationFormType | any>;
 };
 
 export const AmountInput = ({
-  donation,
-  setDonation,
+  value,
+  setValue,
   register,
   errors,
   token,
   control,
+  seletedToken,
 }: AmountInputProps) => {
-  const { data: price, isLoading, error } = useCurrentTokenPrice('solana');
-
+  const { data: price, isLoading, error } = useCurrentTokenPrice(['solana']);
+  const handlePrice = (): number => {
+    if (seletedToken.includes('SOL')) {
+      return price ? price[0].price * value : 0;
+    } else {
+      return value;
+    }
+  };
   return (
     <>
       <InputGroup border="1px solid #141414" rounded={'8px'}>
@@ -145,7 +153,7 @@ export const AmountInput = ({
           }}
           id="amount"
           placeholder="Amount"
-          value={donation} // Here's the change
+          value={value} // Here's the change
           // onChange={(e: any) => {
           //   console.log('on change');
           //   setDonation(e.target.value);
@@ -173,10 +181,9 @@ export const AmountInput = ({
               height={15}
               width={10}
               color="#636666"
-              //background="black"
               play
               perspective={700}
-              numbers={String((donation * price).toFixed(2))}
+              numbers={handlePrice().toString()}
             />
           </InputRightAddon>
         ) : (

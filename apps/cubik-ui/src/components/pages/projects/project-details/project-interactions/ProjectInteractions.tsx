@@ -20,13 +20,7 @@ import {
 } from '@cubik/database';
 import Link from 'next/link';
 import { Key } from 'react';
-import {
-  FaDiscord,
-  FaGithub,
-  FaTelegramPlane,
-  FaTwitter,
-  FaYoutube,
-} from 'react-icons/fa';
+import { FaDiscord, FaGithub, FaTelegramPlane, FaTwitter, FaYoutube } from 'react-icons/fa';
 import { HiLink } from 'react-icons/hi';
 import { WalletAddress } from '~/components/common/wallet/WalletAdd';
 import ComponentErrors from '~/components/errors/ComponentErrors';
@@ -36,7 +30,7 @@ import {
   ProjectCreatorSkeleton,
   ProjectSocialsSkeleton,
 } from '../skeletons/ProjectPageLoadingSkeleton';
-import { ProjectCTAs } from './ProjectCTAs';
+import { HackathonSchedule } from '@cubik/common-types';
 
 type ProjectCreatorTeamMemberProps = {
   teamMember: Team[] & {
@@ -62,12 +56,7 @@ export const ProjectFundingData = ({
       <Box as="p" textStyle={{ base: 'title4', md: 'title3' }} color="white">
         Funding
       </Box>
-      <Skeleton
-        isLoaded={!isLoading}
-        fadeDuration={2.5}
-        opacity={isLoading ? 0.4 : 1}
-        w="full"
-      >
+      <Skeleton isLoaded={!isLoading} fadeDuration={2.5} opacity={isLoading ? 0.4 : 1} w="full">
         <VStack
           border="1px solid"
           borderColor={'surface.green.3'}
@@ -165,12 +154,7 @@ export const ProjectFundingData = ({
           </HStack>
         </VStack>
       </Skeleton>
-      <Skeleton
-        isLoaded={!isLoading}
-        fadeDuration={2.5}
-        opacity={isLoading ? 0.3 : 1}
-        w="full"
-      >
+      <Skeleton isLoaded={!isLoading} fadeDuration={2.5} opacity={isLoading ? 0.3 : 1} w="full">
         <VStack
           border="1px solid"
           borderColor={'neutral.4'}
@@ -227,12 +211,7 @@ export const ProjectFundingData = ({
           </HStack>
         </VStack>
       </Skeleton>
-      <Skeleton
-        isLoaded={!isLoading}
-        fadeDuration={2.5}
-        opacity={isLoading ? 0.3 : 1}
-        w="full"
-      >
+      <Skeleton isLoaded={!isLoading} fadeDuration={2.5} opacity={isLoading ? 0.3 : 1} w="full">
         <VStack
           border="1px solid"
           borderColor={'surface.blue.3'}
@@ -326,28 +305,20 @@ export const ProjectSocials = ({
   const socials = [
     {
       name: projectDetails?.twitter_handle ? 'twitter' : undefined,
-      url: projectDetails?.twitter_handle
-        ? projectDetails?.twitter_handle
-        : undefined,
+      url: projectDetails?.twitter_handle ? projectDetails?.twitter_handle : undefined,
     },
     {
       name: projectDetails?.discord_link ? 'discord' : undefined,
-      url: projectDetails?.discord_link
-        ? projectDetails?.discord_link
-        : undefined,
+      url: projectDetails?.discord_link ? projectDetails?.discord_link : undefined,
     },
     {
       name: projectDetails?.telegram_link ? 'telegram' : undefined,
 
-      url: projectDetails?.telegram_link
-        ? projectDetails?.telegram_link
-        : undefined,
+      url: projectDetails?.telegram_link ? projectDetails?.telegram_link : undefined,
     },
     {
       name: projectDetails?.github_link ? 'github' : undefined,
-      url: projectDetails?.github_link
-        ? projectDetails?.github_link
-        : undefined,
+      url: projectDetails?.github_link ? projectDetails?.github_link : undefined,
     },
   ];
   return (
@@ -362,10 +333,7 @@ export const ProjectSocials = ({
           <ProjectSocialsSkeleton isLoading={isLoading} />
         ) : (
           socials.map(
-            (
-              link: { name: string | undefined; url: string | undefined },
-              key: Key
-            ) =>
+            (link: { name: string | undefined; url: string | undefined }, key: Key) =>
               link.name && (
                 <IconButton
                   aria-label={link.name}
@@ -385,7 +353,7 @@ export const ProjectSocials = ({
                   href={link.url}
                   target="_blank"
                 />
-              )
+              ),
           )
         )}
       </Wrap>
@@ -463,16 +431,14 @@ const getRandomProjects = (
         owner: UserModel;
       })[]
     | undefined,
-  n: number
+  n: number,
 ):
   | (ProjectsModel & {
       owner: UserModel;
     })[]
   | undefined => {
   // filter the array by verified projects
-  arr = arr?.filter(
-    (project) => project.status === ProjectVerifyStatus.VERIFIED
-  );
+  arr = arr?.filter(project => project.status === ProjectVerifyStatus.VERIFIED);
   let len = arr?.length || 0;
   if (len <= n) return arr; // If array length is less than or equal to 3, return the whole array
 
@@ -487,10 +453,9 @@ const getRandomProjects = (
 };
 
 export const SimilarProject = () => {
-  const { data, isLoading, isError } =
-    trpc.project.findSimilarProjects.useQuery({
-      industry: [],
-    });
+  const { data, isLoading, isError } = trpc.project.findSimilarProjects.useQuery({
+    industry: [],
+  });
 
   const randomProjects = getRandomProjects(data, 3);
 
@@ -499,16 +464,12 @@ export const SimilarProject = () => {
   }
 
   return (
-    <VStack
-      gap="16px"
-      align={'start'}
-      w={{ base: 'auto', sm: 'auto', lg: 'full' }}
-    >
+    <VStack gap="16px" align={'start'} w={{ base: 'auto', sm: 'auto', lg: 'full' }}>
       <Box as="p" textStyle={'title3'} color="white">
         Similar Projects
       </Box>
       <VStack align={'start'} w="full" gap="16px" color="#CBCBCB">
-        {randomProjects?.map((project) => (
+        {randomProjects?.map(project => (
           <Card
             as={Link}
             href={`/${project.owner.username}/${project.id}`}
@@ -593,6 +554,9 @@ interface ProjectInteractionsProps {
   funding?: number;
   projectDetails: ProjectsModel;
   isLoading: boolean;
+  roundId?: string;
+  hackathonId?: string;
+  timeline?: HackathonSchedule;
   team: (Team & {
     user: UserModel;
   })[];
@@ -610,25 +574,12 @@ export const ProjectInteractions = ({
   team,
   contributors,
   funding,
+  roundId,
+  hackathonId,
+  timeline,
 }: ProjectInteractionsProps) => {
   return (
-    <Stack
-      w="full"
-      maxW="26rem"
-      flex="1"
-      gap="48px"
-      flexDir="column"
-      justifyContent="start"
-    >
-      <ProjectCTAs
-        joinId={joinId}
-        round={round}
-        projectDetails={projectDetails}
-        isLoading={isLoading}
-        projectJoinRoundId={round?.id as string}
-        roundName={round?.roundName as string}
-        roundId={round?.id as string}
-      />
+    <Stack w="full" maxW="26rem" flex="1" gap="48px" flexDir="column" justifyContent="start">
       <ProjectCreatorAndLinks
         team={team}
         projectDetails={projectDetails}
@@ -636,9 +587,7 @@ export const ProjectInteractions = ({
         preview={preview}
         contributors={contributors?.length || 0}
         communityContributions={Number(
-          (
-            contributors?.reduce((acc, curr) => acc + curr.usdTotal, 0) || 0
-          ).toFixed(2)
+          (contributors?.reduce((acc, curr) => acc + curr.usdTotal, 0) || 0).toFixed(2),
         )}
         funding={funding || 0}
       />

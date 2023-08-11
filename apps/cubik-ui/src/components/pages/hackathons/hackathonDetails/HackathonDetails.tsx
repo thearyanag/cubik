@@ -3,6 +3,12 @@ import HackathonBody from './HackathonBody';
 import HackathonHeader from './HackathonHeader';
 import { JSONValue } from 'superjson/dist/types';
 import { Team, UserModel } from '@cubik/database';
+import {
+  HackathonHost,
+  HackathonSchedule,
+  HackathonSocial,
+  HackathonTracks,
+} from '~/types/hackathon';
 
 type HackathonDetailsPropsType = {
   id: string;
@@ -12,11 +18,11 @@ type HackathonDetailsPropsType = {
   short_description?: string;
   background?: string;
   description?: string;
-  host?: JSONValue;
   prize_pool?: number;
-  prize?: JSONValue;
-  timeline?: JSONValue;
-  social?: JSONValue;
+  tracks: HackathonTracks[];
+  host?: HackathonHost[];
+  timeline?: HackathonSchedule;
+  social?: HackathonSocial[];
   team: (Team & {
     user: UserModel;
   })[];
@@ -34,10 +40,12 @@ const HackathonDetails = (props: HackathonDetailsPropsType) => {
       px={{ base: '2rem', md: '3rem', xl: '1rem' }}
     >
       <HackathonHeader
+        timeline={props.timeline as HackathonSchedule}
         hackathonId={props.id}
         isLoading={props.isLoading}
         logo={props.logo}
         name={props.name}
+        tracks={props.tracks}
         short_description={props.short_description}
       />
       <HackathonBody
@@ -47,8 +55,8 @@ const HackathonDetails = (props: HackathonDetailsPropsType) => {
         description={props.description}
         host={props.host}
         prize_pool={props.prize_pool}
-        prize={props.prize}
         timeline={props.timeline}
+        tracks={props.tracks}
         social={props.social}
       />
     </Container>

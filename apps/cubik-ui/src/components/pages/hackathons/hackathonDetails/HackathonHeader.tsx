@@ -20,7 +20,6 @@ import { BsTwitter } from 'react-icons/bs';
 import { useUserStore } from '~/store/userStore';
 import { trpc } from '~/utils/trpc';
 import * as anchor from '@coral-xyz/anchor';
-import { Web3Storage } from 'web3.storage';
 import {
   checkParticipant,
   createParticipant,
@@ -30,11 +29,22 @@ import {
 import NodeWallet from '@coral-xyz/anchor/dist/cjs/nodewallet';
 import axios from 'axios';
 import { env } from '~/env.mjs';
+import HackathonSchedule from './HackathonSchedule';
+import { isPast } from 'date-fns';
+import SelectProjectToSubmitToHackathon from '../SelectProjectToSubmitToHackathon';
+import { HackathonTracks } from '~/types/hackathon';
+import HackathonStatus from '../HackathonStatus';
+import {
+  HackathonEndSoon,
+  HackathonVotingStartSoon,
+} from '~/components/common/donationCTA/DonationCTA';
+import moment from 'moment';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
+
 export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
   return (
     <>
@@ -139,14 +149,7 @@ export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
                     strokeWidth="0.710526"
                   />
                 </g>
-                <rect
-                  x="25.0001"
-                  y="25"
-                  width="46"
-                  height="46"
-                  rx="23"
-                  stroke="#001F1B"
-                />
+                <rect x="25.0001" y="25" width="46" height="46" rx="23" stroke="#001F1B" />
                 <defs>
                   <linearGradient
                     id="paint0_linear_849_10088"
@@ -204,12 +207,7 @@ export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
                     <stop offset="1" />
                   </linearGradient>
                   <clipPath id="clip0_849_10088">
-                    <rect
-                      width="22"
-                      height="22"
-                      fill="white"
-                      transform="translate(37.0001 37)"
-                    />
+                    <rect width="22" height="22" fill="white" transform="translate(37.0001 37)" />
                   </clipPath>
                 </defs>
               </svg>
@@ -237,8 +235,7 @@ export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
                   Spread the word!
                 </Box>
                 <Box as="p" textStyle={'body5'} color="neutral.8">
-                  Share with others and inspire more more people to participate
-                  in the Game Jam.
+                  Share with others and inspire more more people to participate in the Game Jam.
                 </Box>
               </VStack>
               <HStack
@@ -278,9 +275,7 @@ export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
                   loop={false}
                   autoplay={true}
                   speed={0.7}
-                  src={
-                    'https://assets4.lottiefiles.com/packages/lf20_obhph3sh.json'
-                  }
+                  src={'https://assets4.lottiefiles.com/packages/lf20_obhph3sh.json'}
                   style={{ height: `400px`, width: `400px` }}
                 />
               </Center>
@@ -293,16 +288,20 @@ export const HackathonRegistrationSuccess = ({ isOpen, onClose }: Props) => {
 };
 
 const HackathonHeader = ({
+  timeline,
   isLoading,
   logo,
   name,
   short_description,
+  tracks,
   hackathonId,
 }: {
+  timeline: HackathonSchedule;
   isLoading: boolean;
   logo?: string;
   name?: string;
   short_description?: string;
+  tracks?: HackathonTracks[];
   hackathonId: string;
 }) => {
   const utils = trpc.useContext();
@@ -312,9 +311,8 @@ const HackathonHeader = ({
   const { setVisible } = useWalletModal();
   const [update, setUpdate] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-  const clientStorage = new Web3Storage({
-    token: env.NEXT_PUBLIC_WEB3STORAGE_TOKEN ?? '',
-  });
+  const timelineValues = timeline?.sort((a, b) => a.index - b.index);
+
   const registrationMutation = trpc.hackathon.registration.useMutation({
     onSuccess: () => {
       utils.hackathon.haveRegistered.invalidate({
@@ -326,7 +324,7 @@ const HackathonHeader = ({
       setLoading(false);
       onOpen();
     },
-    onError: (error) => {
+    onError: error => {
       console.log('error - ', error.message);
     },
   });
@@ -337,9 +335,14 @@ const HackathonHeader = ({
     },
     {
       refetchOnWindowFocus: false,
-    }
+    },
   );
   const { isOpen, onClose, onOpen } = useDisclosure();
+  const {
+    isOpen: submitForHackathonIsOpen,
+    onClose: submitForHackathonOnClose,
+    onOpen: submitForHackathonOnOpen,
+  } = useDisclosure();
 
   const hackathonInit = async () => {
     const tx = new anchor.web3.Transaction();
@@ -356,22 +359,16 @@ const HackathonHeader = ({
     // console.log('txid', txid);
   };
   const uploadJSON = async (metadata: string, address: string) => {
-    // const blob = new Blob([metadata], {
-    //   type: 'application/json',
-    // });
-    // const metadataFile = new File([blob], 'metadata.json');
-    // const meta_cid = await clientStorage.put([metadataFile]);
-    // return `https://cloudflare-ipfs.com/ipfs/${meta_cid}/metadata.json`;
-
     const { data } = await axios.post(
       `${env.NEXT_PUBLIC_IMAGE_SERVER_URL}/api/v1/metadata/${address}`,
       {
         metadata: JSON.parse(metadata),
-      }
+      },
     );
 
     return data.Location;
   };
+
   const CreateParticipant = async () => {
     if (!publicKey) return;
     setLoading(true);
@@ -383,8 +380,7 @@ const HackathonHeader = ({
           description:
             'The first community-run Game Jam on Solana, presented by LamportDAO, Magicblock and Solana Foundation.',
           seller_fee_basis_points: 1000,
-          image:
-            'https://cubik-open-cdn.s3.ap-south-1.amazonaws.com/square.png',
+          image: 'https://cubik-open-cdn.s3.ap-south-1.amazonaws.com/square.png',
           external_url: 'https://solanaspeedrun.com/',
           attributes: [],
           properties: {
@@ -403,7 +399,7 @@ const HackathonHeader = ({
             ],
           },
         }),
-        anchorWallet?.publicKey?.toBase58()!
+        anchorWallet?.publicKey?.toBase58()!,
       );
       // console.log('link', link);
       if (!link) return;
@@ -417,18 +413,16 @@ const HackathonHeader = ({
         'SPED',
         link,
         nftMint,
-        'AhFfjBPCoNRDExEDFYuNK2NXCWNa1gi2VUbdA7cF19CD' //
+        'AhFfjBPCoNRDExEDFYuNK2NXCWNa1gi2VUbdA7cF19CD', //
       );
 
       tx.add(ix);
-      const modifyComputeUnits =
-        anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
-          units: 1000000,
-        });
-      const addPriorityFee =
-        anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
-          microLamports: 1,
-        });
+      const modifyComputeUnits = anchor.web3.ComputeBudgetProgram.setComputeUnitLimit({
+        units: 1000000,
+      });
+      const addPriorityFee = anchor.web3.ComputeBudgetProgram.setComputeUnitPrice({
+        microLamports: 1,
+      });
       const { blockhash } = await connection.getLatestBlockhash();
       tx.feePayer = anchorWallet?.publicKey;
       tx.recentBlockhash = blockhash;
@@ -447,6 +441,8 @@ const HackathonHeader = ({
     }
   };
 
+  const hasSubmitted = false;
+
   useEffect(() => {
     const checkNFT = async () => {
       try {
@@ -454,7 +450,7 @@ const HackathonHeader = ({
           const check = await checkParticipant(
             anchorWallet as NodeWallet,
             1,
-            'AhFfjBPCoNRDExEDFYuNK2NXCWNa1gi2VUbdA7cF19CD' //
+            'AhFfjBPCoNRDExEDFYuNK2NXCWNa1gi2VUbdA7cF19CD', //
           );
 
           if (check) {
@@ -474,9 +470,7 @@ const HackathonHeader = ({
   return (
     <>
       <VStack w="full" gap="24px" align={'start'}>
-        {isOpen && (
-          <HackathonRegistrationSuccess isOpen={isOpen} onClose={onClose} />
-        )}
+        {isOpen && <HackathonRegistrationSuccess isOpen={isOpen} onClose={onClose} />}
         <SkeletonCircle
           isLoaded={!isLoading}
           fadeDuration={1}
@@ -500,25 +494,28 @@ const HackathonHeader = ({
           direction={{ base: 'column', lg: 'row' }}
         >
           <VStack flex={3} alignItems="start" w="full" spacing="16px">
-            <Skeleton
-              isLoaded={!isLoading}
-              fadeDuration={1}
-              borderRadius={'12px'}
-              opacity={isLoading ? '0.6' : '1'}
-            >
-              <Box
-                as="p"
-                textStyle={{ base: 'title1', md: 'headline3' }}
-                textTransform="capitalize"
-                color="neutral.11"
-                noOfLines={1}
-                overflow="hidden"
-                whiteSpace="nowrap"
-                textOverflow="ellipsis"
+            <HStack>
+              <Skeleton
+                isLoaded={!isLoading}
+                fadeDuration={1}
+                borderRadius={'12px'}
+                opacity={isLoading ? '0.6' : '1'}
               >
-                {name}
-              </Box>
-            </Skeleton>
+                <Box
+                  as="p"
+                  textStyle={{ base: 'title1', md: 'headline3' }}
+                  textTransform="capitalize"
+                  color="neutral.11"
+                  noOfLines={1}
+                  overflow="hidden"
+                  whiteSpace="nowrap"
+                  textOverflow="ellipsis"
+                >
+                  {name}
+                </Box>
+              </Skeleton>
+              <HackathonStatus show={true} timeline={timeline} />
+            </HStack>
             <SkeletonText
               isLoaded={!isLoading}
               w="full"
@@ -539,12 +536,11 @@ const HackathonHeader = ({
               </Box>
             </SkeletonText>
           </VStack>
-          {/* <Button onClick={hackathonInit}>Init</Button> */}
-          <Center w="full" alignItems="end" flex={1.5}>
-            {hasRegistered.data ? (
-              <>
-                {minted ? (
-                  <>
+          <VStack w={'full'} alignItems="start" flex={1.5} spacing="16px">
+            <Center w="full">
+              {/* {hasRegistered.data ? (
+                <VStack w="full" gap="16px">
+                  {isPast(new Date(timelineValues[2].start as Date)) ? (
                     <Skeleton
                       isLoaded={!isLoading}
                       fadeDuration={1}
@@ -557,52 +553,112 @@ const HackathonHeader = ({
                         size={{ base: 'cubikSmall', md: 'cubikMedium' }}
                         w="full"
                         isLoading={loading}
-                        disabled={!hasRegistered.data ? false : true}
-                        isDisabled={!hasRegistered.data ? false : true}
+                        disabled={!hasSubmitted ? false : true}
+                        isDisabled={!hasSubmitted ? false : true}
+                        onClick={() => {
+                          if (!connected) {
+                            setVisible(true);
+                            return;
+                          }
+                          submitForHackathonOnOpen();
+                        }}
+                      >
+                        {hasSubmitted ? 'Submitted' : 'Submit Project'}
+                      </Button>
+                    </Skeleton>
+                  ) : (
+                    <Skeleton
+                      isLoaded={!isLoading}
+                      fadeDuration={1}
+                      borderRadius={'12px'}
+                      opacity={isLoading ? '0.5' : '1'}
+                      w="full"
+                    >
+                      <Button
+                        variant="cubikFilled"
+                        size={{ base: 'cubikSmall', md: 'cubikMedium' }}
+                        w="full"
+                        isLoading={loading}
+                        disabled={true}
+                        isDisabled={true}
+                        onClick={async () => {
+                          if (!connected) {
+                            setVisible(true);
+                            return;
+                          }
+                        }}
+                      >
+                        {hasSubmitted ? 'Submitted' : 'Submit Project'}
+                      </Button>
+                    </Skeleton>
+                  )}
+                  {!minted && (
+                    <Skeleton
+                      isLoaded={!isLoading}
+                      fadeDuration={1}
+                      borderRadius={'12px'}
+                      opacity={isLoading ? '0.5' : '1'}
+                      w="full"
+                    >
+                      <Button
+                        variant="cubikFilled"
+                        size={{ base: 'cubikSmall', md: 'cubikMedium' }}
+                        w="full"
+                        isLoading={loading}
                         onClick={async () => {
                           if (!connected) {
                             setVisible(true);
                             return;
                           }
                           const sig = await CreateParticipant();
-                          if (!sig) return;
-                          registrationMutation.mutate({
-                            hackathonId: hackathonId,
-                          });
                         }}
                       >
-                        {hasRegistered.data ? 'Registered' : 'Register'}
+                        Mint Hackathon Pass
                       </Button>
                     </Skeleton>
-                  </>
-                ) : (
-                  <Skeleton
-                    isLoaded={!isLoading}
-                    fadeDuration={1}
-                    borderRadius={'12px'}
-                    opacity={isLoading ? '0.5' : '1'}
-                    w="full"
-                  >
+                  )}
+                </VStack>
+              ) : (
+                <Skeleton
+                  isLoaded={!isLoading}
+                  fadeDuration={1}
+                  borderRadius={'12px'}
+                  opacity={isLoading ? '0.5' : '1'}
+                  w="full"
+                >
+                  {
                     <Button
                       variant="cubikFilled"
                       size={{ base: 'cubikSmall', md: 'cubikMedium' }}
                       w="full"
                       isLoading={loading}
+                      disabled={!hasRegistered.data ? false : true}
+                      isDisabled={!hasRegistered.data ? false : true}
                       onClick={async () => {
+                        // console.log('click on register');
+
+                        if (minted) {
+                          return;
+                        }
+
                         if (!connected) {
                           setVisible(true);
                           return;
                         }
                         const sig = await CreateParticipant();
+                        if (!sig) return;
+                        registrationMutation.mutate({
+                          hackathonId: hackathonId,
+                        });
                       }}
                     >
-                      Claim
+                      {hasRegistered.data ? 'Registered' : 'Register'}
                     </Button>
-                  </Skeleton>
-                )}
-              </>
-            ) : (
-              <Skeleton
+                  }
+                </Skeleton>
+              )} */}
+
+              {/* <Skeleton
                 isLoaded={!isLoading}
                 fadeDuration={1}
                 borderRadius={'12px'}
@@ -614,28 +670,54 @@ const HackathonHeader = ({
                   size={{ base: 'cubikSmall', md: 'cubikMedium' }}
                   w="full"
                   isLoading={loading}
-                  disabled={!hasRegistered.data ? false : true}
-                  isDisabled={!hasRegistered.data ? false : true}
-                  onClick={async () => {
-                    // console.log('click on register');
+                  // disabled={true}
+                  // isDisabled={true}
+                  onClick={() => {
                     if (!connected) {
                       setVisible(true);
                       return;
                     }
-                    const sig = await CreateParticipant();
-                    if (!sig) return;
-                    registrationMutation.mutate({
-                      hackathonId: hackathonId,
-                    });
+                    submitForHackathonOnOpen();
                   }}
                 >
-                  {hasRegistered.data ? 'Registered' : 'Register'}{' '}
+                  {hasSubmitted ? 'Submitted' : 'Submit Project'}
                 </Button>
-              </Skeleton>
+              </Skeleton> */}
+            </Center>
+{/*             {timeline && moment(new Date(timeline[1].end!)) > moment(new Date()) && (
+              <HackathonEndSoon
+                isLoading={isLoading}
+                endingDate={
+                  timelineValues
+                    ? moment(new Date(timeline[2].end!)).utc().toDate()
+                    : new Date(1690761647000)
+                }
+                isHackathon={true}
+              />
             )}
-          </Center>
+            {timeline && moment(new Date(timeline[1].end!)) < moment(new Date()) && (
+              <HackathonVotingStartSoon
+                isLoading={isLoading}
+                endingDate={
+                  timelineValues
+                    ? moment(new Date(timeline[2].end!)).utc().toDate()
+                    : new Date(1690761647000)
+                }
+                isHackathon={true}
+              />
+            )} */}
+          </VStack>
         </Stack>
       </VStack>
+      <SelectProjectToSubmitToHackathon
+        hackathonName={name || ''}
+        isOpen={submitForHackathonIsOpen}
+        onClose={submitForHackathonOnClose}
+        hackathonLogo={logo || ''}
+        hackathonDescription={short_description || ''}
+        hackathonTracks={tracks as HackathonTracks[]}
+        hackathonId={hackathonId}
+      />
     </>
   );
 };

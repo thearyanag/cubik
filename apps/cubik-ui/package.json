@@ -10,6 +10,7 @@
     "prettier": "prettier --write ."
   },
   "dependencies": {
+    "@cubik/common-types": "workspace:*",
     "@chakra-ui/accordion": "^2.2.0",
     "@chakra-ui/alert": "^2.1.0",
     "@chakra-ui/anatomy": "^2.1.1",
@@ -132,9 +133,17 @@
     "@types/react-dom": "18.0.11",
     "@types/uuid": "^9.0.1",
     "eslint": "8.36.0",
-    "eslint-config-next": "13.2.4",
+    "eslint-config-custom": "workspace:*",
     "husky": "^8.0.3",
     "simple-zustand-devtools": "^1.1.0",
     "typescript": "4.9.5"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint-config-custom/base",
+      "eslint-config-custom/next",
+      "eslint-config-custom/react"
+    ]
   }
 }
